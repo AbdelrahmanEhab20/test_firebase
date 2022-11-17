@@ -1,14 +1,30 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+// import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:test_firebase/green_page.dart';
 import 'package:test_firebase/red_page.dart';
 
-Future<void> main() async {
+import 'services/local_notification-service.dart';
+
+// function receive message when app in BackGround
+Future<void> backGroundHandler(RemoteMessage message) async {
+  print("%%%%%%%%%%%%%%%%%%%%%%%%%%");
+  print("message Data");
+  print(message.data.toString());
+  print("%%%%%%%%%%%%%%%%%%%%%%%%%%");
+  print("message.notification.title");
+  print(message.notification!.title);
+}
+
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
-  await FirebaseMessaging.instance.getInitialMessage();
+
+  ///@@@@@@@@@@@@@@@@@@@@@@@@@@  FirebaseMessaging onBackgroundMessage @@@@@@@@@@@@@@@@@@@@@@@@@
+  ///Set a message handler function which is called when the app is in the background or terminated.
+  FirebaseMessaging.onBackgroundMessage(backGroundHandler);
+
   runApp(MyApp());
 }
 
@@ -40,12 +56,25 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   @override
   void initState() {
+    // calling the class of local notification
+    LocalNotificationService.initialize(context);
+
     // TODO: implement initState
     super.initState();
     //@@@@@@@@@@@@@  instance.getInitialMessage @@@@@@@@@@
     //If the application has been opened from a terminated state via a [RemoteMessage] (containing a [Notification]),
     //it will be returned, otherwise it will be null.
-    FirebaseMessaging.instance.getInitialMessage();
+    ///--------------------->||||
+    // gives us the message on which user taps and it opened the app from terminated state
+    FirebaseMessaging.instance.getInitialMessage().then((message) {
+      if (message != null) {
+        print("%%%%%%%%%%%%%%%%%%%%%%%%%%");
+        final routeFromMessage = message.data["route"];
+        print(routeFromMessage);
+        Navigator.of(context).pushNamed(routeFromMessage);
+        print("%%%%%%%%%%%%%%%%%%%%%%%%%%");
+      }
+    });
 
     //@@@@@@@@@@@@@  FirebaseMessaging.onMessage @@@@@@@@@@
     //Returns a Stream that is called when an incoming FCM payload is received whilst the Flutter instance is in the foreground.
@@ -61,6 +90,11 @@ class _MyHomePageState extends State<MyHomePage> {
         print("message.notification.body");
         print(message.notification!.body);
       }
+      // display message test
+      LocalNotificationService.display(message);
+      // final routeFromMessage = message.data["route"];
+      // print(routeFromMessage);
+      // Navigator.of(context).pushNamed(routeFromMessage);
     });
     //@@@@@@@@@@@@@  FirebaseMessaging.onMessageOpenedApp @@@@@@@@@@
     //Returns a [Stream] that is called when a user presses a notification message displayed via FCM.
@@ -70,6 +104,7 @@ class _MyHomePageState extends State<MyHomePage> {
     FirebaseMessaging.onMessageOpenedApp.listen((message) {
       final routeFromMessage = message.data["route"];
       print(routeFromMessage);
+      Navigator.of(context).pushNamed(routeFromMessage);
     });
   }
 
