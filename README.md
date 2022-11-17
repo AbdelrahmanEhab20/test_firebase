@@ -1,6 +1,6 @@
 # test_firebase
 
-A new Flutter project.
+A new Flutter project, testing push notifications with it
 
 ## Getting Started
 
